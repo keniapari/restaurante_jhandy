@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+    <defs>
+        <linearGradient id="logo-gold" x1="28" y1="20" x2="100" y2="108" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#F7E3AE" />
+            <stop offset="0.5" stop-color="#D9B75C" />
+            <stop offset="1" stop-color="#A9821F" />
+        </linearGradient>
+    </defs>
+    <circle cx="64" cy="64" r="58" fill="#0B231B" stroke="url(#logo-gold)" stroke-width="3" />
+    <circle cx="64" cy="64" r="50" fill="none" stroke="#D9B75C" stroke-opacity="0.28" stroke-width="1" />
+    <circle cx="48" cy="55" r="12" fill="url(#logo-gold)" />
+    <circle cx="64" cy="47" r="15" fill="url(#logo-gold)" />
+    <circle cx="80" cy="55" r="12" fill="url(#logo-gold)" />
+    <rect x="44" y="53" width="40" height="32" rx="5" fill="url(#logo-gold)" />
+    <rect x="42" y="82" width="44" height="10" rx="5" fill="#F7E3AE" />
+    <path d="M54 62v15M64 60v18M74 62v15" stroke="#0B231B" stroke-width="3" stroke-linecap="round" />
+</svg>

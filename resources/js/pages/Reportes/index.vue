@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { index as comprasIndex } from '@/routes/reportes';
 import { onMounted } from 'vue';
+import { index as comprasIndex } from '@/routes/reportes';
 
 defineOptions({
     layout: {
@@ -16,6 +16,8 @@ onMounted(() => {
 
 <template>
     <div class="flex h-full items-center justify-center">
-        <p class="text-muted-foreground text-sm">Redirigiendo a Reportes de Compras...</p>
+        <p class="text-sm text-muted-foreground">
+            Redirigiendo a Reportes de Compras...
+        </p>
     </div>
 </template>

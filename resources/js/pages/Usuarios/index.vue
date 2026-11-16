@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import {
-    CalendarDays,
     Pencil,
     Plus,
     Search,
@@ -9,8 +8,8 @@ import {
     User as UserIcon,
 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
-import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import ManagementHero from '@/components/ManagementHero.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DatePickerInput } from '@/components/ui/date-picker';
@@ -53,7 +52,6 @@ type UserItem = {
     fecha_ingreso: string | null;
     fecha_fin: string | null;
     email: string;
-    email_verified_at: string | null;
     status: string;
     created_at: string;
     roles: { id: number; nombre: string }[];
@@ -82,11 +80,13 @@ const search = ref(props.filters.search ?? '');
 
 watch(search, (value) => {
     const url = new URL(window.location.href);
+
     if (value) {
         url.searchParams.set('search', value);
     } else {
         url.searchParams.delete('search');
     }
+
     url.searchParams.delete('page');
     setTimeout(() => {
         window.location.href = url.toString();
@@ -172,7 +172,10 @@ function confirmDelete(user: UserItem) {
 }
 
 function submitDelete() {
-    if (!userToDelete.value) return;
+    if (!userToDelete.value) {
+return;
+}
+
     const id = userToDelete.value.id;
     deleteDialogOpen.value = false;
     router.delete(`/usuarios/${id}`, {
@@ -189,35 +192,50 @@ function toggleStatus(user: UserItem) {
     });
 }
 
-const roleBadgeVariant: Record<string, string> = {
+const roleBadgeVariant: Record<string, 'default' | 'secondary' | 'outline'> = {
     admin: 'default',
-    cajera: 'secondary',
-    operador: 'outline',
+    vendedor: 'secondary',
+    encargado_inventario: 'outline',
 };
 
-function userRoleBadge(roleName: string): string {
+const roleNames: Record<string, string> = {
+    admin: 'Propietaria',
+    vendedor: 'Cajera',
+    encargado_inventario: 'Cocinera',
+    cliente: 'Cliente',
+};
+
+function userRoleBadge(roleName: string): 'default' | 'secondary' | 'outline' {
     return roleBadgeVariant[roleName] ?? 'secondary';
+}
+
+function roleDisplay(roleName: string): string {
+    return roleNames[roleName] ?? roleName.replace(/_/g, ' ');
 }
 </script>
 
 <template>
     <Head title="Gestión de Usuarios" />
 
-    <div class="flex h-full flex-1 flex-col gap-6 rounded-xl p-4">
-        <div class="flex items-center justify-between">
-            <Heading
-                title="Usuarios"
-                description="Administra los usuarios del sistema y asigna roles."
-            />
+    <div
+        class="flex h-full flex-1 flex-col gap-5 rounded-xl bg-gradient-to-br from-emerald-200 via-amber-100 to-teal-200 p-4"
+    >
+        <ManagementHero
+            title="Usuarios"
+            description="Administra los usuarios del sistema y asigna roles."
+        >
+            <template #icon><User class="h-7 w-7" /></template>
             <Button v-if="can('usuarios.gestion')" @click="openCreateDialog">
                 <Plus class="mr-2 h-4 w-4" />
                 Nuevo Usuario
             </Button>
-        </div>
+        </ManagementHero>
 
-        <div class="relative max-w-sm">
+        <div
+            class="relative max-w-xl rounded-xl border border-emerald-300 bg-gradient-to-r from-amber-200/90 via-emerald-100/90 to-teal-200/90 p-4 shadow-md"
+        >
             <Search
-                class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                class="absolute top-1/2 left-7 h-4 w-4 -translate-y-1/2 text-muted-foreground"
             />
             <Input
                 v-model="search"
@@ -226,14 +244,17 @@ function userRoleBadge(roleName: string): string {
             />
         </div>
 
-        <div class="overflow-hidden rounded-xl border">
+        <div
+            class="overflow-hidden rounded-2xl border border-emerald-300 bg-gradient-to-br from-amber-200/90 via-emerald-100/90 to-teal-200/90 shadow-xl shadow-emerald-400/25"
+        >
             <table class="w-full text-sm">
                 <thead>
-                    <tr class="border-b bg-muted/50 text-left">
+                    <tr
+                        class="border-b border-emerald-300 bg-gradient-to-r from-emerald-800 via-emerald-700 to-amber-600 text-left text-amber-50"
+                    >
                         <th class="px-4 py-3 font-medium">Usuario</th>
                         <th class="px-4 py-3 font-medium">Email</th>
                         <th class="px-4 py-3 font-medium">Rol</th>
-                        <th class="px-4 py-3 font-medium">Verificado</th>
                         <th class="px-4 py-3 font-medium">Estado</th>
                         <th class="px-4 py-3 text-right font-medium">
                             Acciones
@@ -266,7 +287,7 @@ function userRoleBadge(roleName: string): string {
                                 :variant="userRoleBadge(role.nombre)"
                                 class="text-xs"
                             >
-                                {{ role.nombre }}
+                                {{ roleDisplay(role.nombre) }}
                             </Badge>
                             <span
                                 v-if="user.roles.length === 0"
@@ -274,18 +295,7 @@ function userRoleBadge(roleName: string): string {
                                 >—</span
                             >
                         </td>
-                        <td class="px-4 py-3">
-                            <Badge
-                                :variant="
-                                    user.email_verified_at
-                                        ? 'default'
-                                        : 'secondary'
-                                "
-                                class="text-xs"
-                            >
-                                {{ user.email_verified_at ? 'Sí' : 'No' }}
-                            </Badge>
-                        </td>
+
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-2">
                                 <button
@@ -351,7 +361,7 @@ function userRoleBadge(roleName: string): string {
                     </tr>
                     <tr v-if="users.data.length === 0">
                         <td
-                            colspan="6"
+                            colspan="5"
                             class="py-12 text-center text-sm text-muted-foreground"
                         >
                             <UserIcon class="mx-auto mb-2 h-8 w-8 opacity-40" />
@@ -398,13 +408,16 @@ function userRoleBadge(roleName: string): string {
     </div>
 
     <Dialog v-model:open="formDialogOpen">
-        <DialogContent class="flex flex-col sm:max-w-[1000px] max-h-[90vh]">
+        <DialogContent class="flex max-h-[90vh] flex-col sm:max-w-[1000px]">
             <DialogHeader class="shrink-0">
                 <DialogTitle>{{ dialogTitle }}</DialogTitle>
                 <DialogDescription>{{ dialogDescription }}</DialogDescription>
             </DialogHeader>
-            <form @submit.prevent="submitSave" class="flex flex-col overflow-hidden">
-                <div class="overflow-y-auto flex-1 -mx-6 px-6 py-4">
+            <form
+                @submit.prevent="submitSave"
+                class="flex flex-col overflow-hidden"
+            >
+                <div class="-mx-6 flex-1 overflow-y-auto px-6 py-4">
                     <div class="grid gap-6">
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                             <div class="grid gap-2">
@@ -417,22 +430,30 @@ function userRoleBadge(roleName: string): string {
                                 <InputError :message="form.errors.nombres" />
                             </div>
                             <div class="grid gap-2">
-                                <Label for="apellido_paterno">Apellido paterno *</Label>
+                                <Label for="apellido_paterno"
+                                    >Apellido paterno *</Label
+                                >
                                 <Input
                                     id="apellido_paterno"
                                     v-model="form.apellido_paterno"
                                     placeholder="Apellido paterno"
                                 />
-                                <InputError :message="form.errors.apellido_paterno" />
+                                <InputError
+                                    :message="form.errors.apellido_paterno"
+                                />
                             </div>
                             <div class="grid gap-2">
-                                <Label for="apellido_materno">Apellido materno *</Label>
+                                <Label for="apellido_materno"
+                                    >Apellido materno *</Label
+                                >
                                 <Input
                                     id="apellido_materno"
                                     v-model="form.apellido_materno"
                                     placeholder="Apellido materno"
                                 />
-                                <InputError :message="form.errors.apellido_materno" />
+                                <InputError
+                                    :message="form.errors.apellido_materno"
+                                />
                             </div>
                         </div>
 
@@ -447,20 +468,16 @@ function userRoleBadge(roleName: string): string {
                                 <InputError :message="form.errors.telefono" />
                             </div>
                             <div class="grid gap-2">
-                                <Label for="fecha_ingreso">Fecha de ingreso</Label>
+                                <Label for="fecha_ingreso"
+                                    >Fecha de ingreso</Label
+                                >
                                 <DatePickerInput
                                     id="fecha_ingreso"
                                     v-model="form.fecha_ingreso"
                                 />
-                                <InputError :message="form.errors.fecha_ingreso" />
-                            </div>
-                            <div class="grid gap-2">
-                                <Label for="fecha_fin">Fecha de fin</Label>
-                                <DatePickerInput
-                                    id="fecha_fin"
-                                    v-model="form.fecha_fin"
+                                <InputError
+                                    :message="form.errors.fecha_ingreso"
                                 />
-                                <InputError :message="form.errors.fecha_fin" />
                             </div>
                         </div>
 
@@ -511,19 +528,23 @@ function userRoleBadge(roleName: string): string {
                         </div>
 
                         <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
-                            <div class="grid gap-2">
+                            <div class="grid gap-2 md:col-span-2">
                                 <Label for="role">Rol *</Label>
                                 <Select v-model="form.role">
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccionar rol" />
+                                    <SelectTrigger class="w-full">
+                                        <SelectValue
+                                            placeholder="Seleccionar rol"
+                                        />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem
                                             v-for="r in roles"
                                             :key="r.id"
                                             :value="r.nombre"
+                                            :text-value="r.nombre"
                                         >
-                                            {{ r.nombre }} — {{ r.descripcion ?? '' }}
+                                            {{ roleDisplay(r.nombre) }} —
+                                            {{ r.descripcion ?? '' }}
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -557,19 +578,30 @@ function userRoleBadge(roleName: string): string {
                                             ]"
                                         />
                                     </button>
-                                    <Label class="cursor-pointer font-medium" @click="form.status = form.status === 'activo' ? 'desactivado' : 'activo'">
+                                    <Label
+                                        class="cursor-pointer font-medium"
+                                        @click="
+                                            form.status =
+                                                form.status === 'activo'
+                                                    ? 'desactivado'
+                                                    : 'activo'
+                                        "
+                                    >
                                         Cuenta activa
                                     </Label>
                                 </div>
                                 <p class="text-xs text-muted-foreground">
-                                    Si está desactivada el usuario no podrá iniciar sesión.
+                                    Si está desactivada el usuario no podrá
+                                    iniciar sesión.
                                 </p>
                                 <InputError :message="form.errors.status" />
                             </div>
                         </div>
                     </div>
                 </div>
-                <DialogFooter class="shrink-0 border-t border-pink-100 pt-4 px-0">
+                <DialogFooter
+                    class="shrink-0 border-t border-amber-200 px-0 pt-4"
+                >
                     <DialogClose as-child>
                         <Button type="button" variant="outline"
                             >Cancelar</Button

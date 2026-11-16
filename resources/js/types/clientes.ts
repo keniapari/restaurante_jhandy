@@ -5,8 +5,10 @@ export type Cliente = {
     email: string | null;
     telefono: string | null;
     direccion: string | null;
-    ci_nit: string;
-    ventas_count: number;
+    ci_nit: string | null;
+    estado: 'activo' | 'inactivo';
+    pedidos_count: number;
+    reservas_count?: number;
     created_at: string;
     updated_at: string;
 };

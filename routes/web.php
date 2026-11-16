@@ -1,32 +1,138 @@
 <?php
 
-use App\Http\Controllers\CatalogoController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\ClientesController;
-use App\Http\Controllers\ComprasController;
+use App\Http\Controllers\ConfiguracionPagoController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\InventarioController;
-use App\Http\Controllers\ProductosController;
-use App\Http\Controllers\ProveedoresController;
+use App\Http\Controllers\MenuController;
+use App\Http\Controllers\PedidosController;
+use App\Http\Controllers\PedidosGestionController;
+use App\Http\Controllers\PerfilController;
+use App\Http\Controllers\PlatosController;
 use App\Http\Controllers\ReportesController;
+use App\Http\Controllers\ReservasController;
 use App\Http\Controllers\RolesController;
 use App\Http\Controllers\UsersController;
-use App\Http\Controllers\VentasController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Features;
 
-Route::inertia('/', 'Welcome', [
-    'canRegister' => Features::enabled(Features::registration()),
-])->name('home');
+Route::get('/', function () {
+    $user = Auth::user();
 
-Route::get('catalogo', [CatalogoController::class, 'index'])->name('catalogo');
+    if (! $user) {
+        return app(MenuController::class)->welcome();
+    }
 
-Route::middleware(['auth', 'verified', 'role:admin,vendedor,encargado_inventario'])->group(function () {
+    if ($user->hasRole('cliente')) {
+        return redirect()->route('cliente.menu.index');
+    }
+
+    return redirect()->route('dashboard');
+})->name('principal');
+
+Route::middleware(['guest', 'throttle:10,1'])->group(function () {
+    Route::get('auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
+    Route::get('auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+});
+
+Route::middleware(['auth', 'verified', 'role:admin'])
+    ->prefix('configuracion')
+    ->name('configuracion.')
+    ->group(function () {
+        Route::get('pagos', [ConfiguracionPagoController::class, 'edit'])->name('pagos.edit');
+        Route::post('pagos', [ConfiguracionPagoController::class, 'update'])->name('pagos.update');
+    });
+
+Route::middleware(['auth', 'verified', 'role:cliente'])->group(function () {
+    Route::get('perfil', [PerfilController::class, 'index'])->name('perfil');
+    Route::patch('perfil', [PerfilController::class, 'update'])->name('perfil.update');
+    Route::post('perfil/pedidos/{pedido}/comprobante', [PerfilController::class, 'subirComprobante'])
+        ->name('perfil.pedidos.comprobante');
+
+    Route::get('carta', [MenuController::class, 'clienteIndex'])->name('cliente.menu.index');
+    Route::post('carta/pedido', [PedidosController::class, 'storeCliente'])->name('cliente.menu.store');
+});
+
+Route::middleware(['auth', 'verified', 'redirect-client', 'role:admin,vendedor,encargado_inventario', 'permission:pedidos.ver'])
+    ->prefix('gestion')
+    ->name('gestion.')
+    ->group(function () {
+        Route::get('pedidos', [PedidosGestionController::class, 'index'])->name('pedidos.index');
+        Route::get('pedidos/create', [PedidosGestionController::class, 'create'])
+            ->middleware('permission:pedidos.crear')
+            ->name('pedidos.create');
+        Route::get('pedidos/{pedido}', [PedidosGestionController::class, 'show'])->name('pedidos.show');
+
+        Route::middleware('permission:pedidos.crear')->group(function () {
+            Route::post('pedidos', [PedidosController::class, 'storeNuevo'])->name('pedidos.store');
+        });
+
+        Route::post('pedidos/{pedido}/confirmar', [PedidosGestionController::class, 'confirmar'])
+            ->middleware('permission:pedidos.confirmar')
+            ->name('pedidos.confirmar');
+
+        Route::middleware('permission:pedidos.cocina')->group(function () {
+            Route::post('pedidos/{pedido}/preparar', [PedidosGestionController::class, 'preparar'])->name('pedidos.preparar');
+            Route::post('pedidos/{pedido}/listo', [PedidosGestionController::class, 'listo'])->name('pedidos.listo');
+        });
+
+        Route::middleware('permission:pedidos.gestion')->group(function () {
+            Route::patch('pedidos/{pedido}/estado', [PedidosGestionController::class, 'updateEstado'])->name('pedidos.estado');
+            Route::post('pedidos/{pedido}/entregar', [PedidosGestionController::class, 'entregar'])->name('pedidos.entregar');
+            Route::post('pedidos/{pedido}/cancelar', [PedidosGestionController::class, 'cancelar'])->name('pedidos.cancelar');
+        });
+    });
+
+Route::middleware(['auth', 'verified', 'redirect-client', 'role:admin,vendedor', 'permission:menu.ver'])
+    ->prefix('menu')
+    ->name('menu.')
+    ->group(function () {
+        Route::get('/', [MenuController::class, 'index'])->name('index');
+        Route::get('conformar', [MenuController::class, 'conformar'])->name('conformar');
+        Route::post('conformar', [PedidosController::class, 'storeRestaurante'])
+            ->middleware('permission:pedidos.crear')
+            ->name('conformar.store');
+    });
+
+Route::middleware(['auth', 'verified', 'redirect-client', 'role:admin,vendedor,encargado_inventario'])
+    ->prefix('platos')
+    ->name('platos.')
+    ->group(function () {
+        Route::get('/', [PlatosController::class, 'index'])
+            ->middleware('permission:platos.ver')
+            ->name('index');
+
+        Route::middleware('permission:platos.gestion')->group(function () {
+            Route::post('/', [PlatosController::class, 'store'])->name('store');
+            Route::patch('{plato}', [PlatosController::class, 'update'])->name('update');
+            Route::patch('{plato}/disponibilidad', [PlatosController::class, 'toggleDisponibilidad'])->name('disponibilidad.update');
+            Route::delete('{plato}', [PlatosController::class, 'destroy'])->name('destroy');
+        });
+    });
+
+Route::middleware(['auth', 'verified', 'redirect-client', 'role:admin,vendedor'])
+    ->prefix('reservas')
+    ->name('reservas.')
+    ->group(function () {
+        Route::get('/', [ReservasController::class, 'index'])
+            ->middleware('permission:reservas.ver')
+            ->name('index');
+
+        Route::middleware('permission:reservas.gestion')->group(function () {
+            Route::post('/', [ReservasController::class, 'store'])->name('store');
+            Route::patch('{reserva}', [ReservasController::class, 'update'])->name('update');
+            Route::patch('{reserva}/estado', [ReservasController::class, 'updateEstado'])->name('estado');
+            Route::delete('{reserva}', [ReservasController::class, 'destroy'])->name('destroy');
+        });
+    });
+
+Route::middleware(['auth', 'verified', 'redirect-client', 'role:admin,vendedor,encargado_inventario'])->group(function () {
     Route::get('dashboard', DashboardController::class)
         ->middleware('permission:panel.ver')
         ->name('dashboard');
 });
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'redirect-client'])->group(function () {
     Route::prefix('clientes')
         ->name('clientes.')
         ->middleware('permission:clientes.ver')
@@ -37,123 +143,28 @@ Route::middleware(['auth'])->group(function () {
             Route::middleware('permission:clientes.gestion')->group(function () {
                 Route::post('/', [ClientesController::class, 'store'])->name('store');
                 Route::patch('{cliente}', [ClientesController::class, 'update'])->name('update');
-                Route::delete('{cliente}', [ClientesController::class, 'destroy'])->name('destroy');
+                Route::patch('{cliente}/estado', [ClientesController::class, 'toggleEstado'])->name('estado');
             });
-        });
-
-    Route::prefix('proveedores')
-        ->name('proveedores.')
-        ->middleware('permission:proveedores.ver')
-        ->group(function () {
-            Route::get('/', [ProveedoresController::class, 'index'])->name('index');
-            Route::get('{proveedor}', [ProveedoresController::class, 'show'])->name('show');
-
-            Route::middleware('permission:proveedores.gestion')->group(function () {
-                Route::post('/', [ProveedoresController::class, 'store'])->name('store');
-                Route::patch('{proveedor}', [ProveedoresController::class, 'update'])->name('update');
-                Route::delete('{proveedor}', [ProveedoresController::class, 'destroy'])->name('destroy');
-            });
-        });
-
-            Route::prefix('compras')
-        ->name('compras.')
-        ->middleware('permission:compras.ver')
-        ->group(function () {
-            Route::get('/', [ComprasController::class, 'index'])->name('index');
-            Route::get('{compra}', [ComprasController::class, 'show'])->name('show');
-
-            Route::middleware('permission:compras.crear')->group(function () {
-                Route::post('/', [ComprasController::class, 'store'])->name('store');
-            });
-
-            Route::middleware('permission:compras.editar')->group(function () {
-                Route::patch('{compra}', [ComprasController::class, 'update'])->name('update');
-            });
-
-            Route::middleware('permission:compras.eliminar')->group(function () {
-                Route::delete('{compra}', [ComprasController::class, 'destroy'])->name('destroy');
-            });
-        });
-
-    Route::prefix('ventas')
-        ->name('ventas.')
-        ->middleware('permission:ventas.ver')
-        ->group(function () {
-            Route::get('/', [VentasController::class, 'index'])->name('index');
-            Route::get('anuladas', [VentasController::class, 'anuladas'])->name('anuladas');
-            Route::get('{venta}', [VentasController::class, 'show'])->name('show');
-
-            Route::middleware('permission:ventas.crear')->group(function () {
-                Route::post('/', [VentasController::class, 'store'])->name('store');
-                Route::post('{venta}/anular', [VentasController::class, 'anular'])->name('anular');
-            });
-        });
-
-    Route::prefix('inventario')
-        ->name('inventario.')
-        ->middleware('permission:inventario.ver')
-        ->group(function () {
-            Route::get('/', [InventarioController::class, 'index'])->name('index');
-            Route::get('{inventario}/movimientos', [InventarioController::class, 'movimientos'])->name('movimientos');
-
-            Route::middleware('permission:inventario.gestion')->group(function () {
-                Route::post('/', [InventarioController::class, 'store'])->name('store');
-                Route::patch('{inventario}', [InventarioController::class, 'update'])->name('update');
-                Route::delete('{inventario}', [InventarioController::class, 'destroy'])->name('destroy');
-                Route::patch('{inventario}/toggle-disponible', [InventarioController::class, 'toggleDisponible'])->name('toggle-disponible');
-                Route::post('{inventario}/entrada', [InventarioController::class, 'registrarEntrada'])->name('entrada');
-                Route::post('{inventario}/salida', [InventarioController::class, 'registrarSalida'])->name('salida');
-            });
-        });
-
-    Route::prefix('productos')
-        ->name('productos.')
-        ->middleware('permission:productos.ver')
-        ->group(function () {
-            Route::get('/', [ProductosController::class, 'index'])->name('index');
-            Route::get('crear', [ProductosController::class, 'create'])->name('create');
-            Route::get('{producto}/editar', [ProductosController::class, 'edit'])->name('edit');
-
-            Route::middleware('permission:productos.crear')->group(function () {
-                Route::post('/', [ProductosController::class, 'store'])->name('store');
-            });
-
-            Route::middleware('permission:productos.editar')->group(function () {
-                Route::post('{producto}', [ProductosController::class, 'update'])->name('update');
-            });
-
-            Route::middleware('permission:productos.eliminar')->group(function () {
-                Route::delete('{producto}', [ProductosController::class, 'destroy'])->name('destroy');
-            });
-
-            Route::post('categorias', [ProductosController::class, 'storeCategoria'])->name('categorias.store');
-            Route::patch('categorias/{categoria}', [ProductosController::class, 'updateCategoria'])->name('categorias.update');
-            Route::delete('categorias/{categoria}', [ProductosController::class, 'destroyCategoria'])->name('categorias.destroy');
-            Route::post('marcas', [ProductosController::class, 'storeMarca'])->name('marcas.store');
-            Route::patch('marcas/{marca}', [ProductosController::class, 'updateMarca'])->name('marcas.update');
-            Route::delete('marcas/{marca}', [ProductosController::class, 'destroyMarca'])->name('marcas.destroy');
-            Route::post('modelos', [ProductosController::class, 'storeModelo'])->name('modelos.store');
-            Route::patch('modelos/{modelo}', [ProductosController::class, 'updateModelo'])->name('modelos.update');
-            Route::delete('modelos/{modelo}', [ProductosController::class, 'destroyModelo'])->name('modelos.destroy');
-            Route::post('tallas', [ProductosController::class, 'storeTalla'])->name('tallas.store');
-            Route::patch('tallas/{talla}', [ProductosController::class, 'updateTalla'])->name('tallas.update');
-            Route::delete('tallas/{talla}', [ProductosController::class, 'destroyTalla'])->name('tallas.destroy');
-            Route::post('colores', [ProductosController::class, 'storeColor'])->name('colores.store');
-            Route::patch('colores/{color}', [ProductosController::class, 'updateColor'])->name('colores.update');
-            Route::delete('colores/{color}', [ProductosController::class, 'destroyColor'])->name('colores.destroy');
         });
 });
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'redirect-client'])->group(function () {
     Route::prefix('reportes')
         ->name('reportes.')
         ->middleware('permission:panel.ver')
         ->group(function () {
-            Route::get('/', [ReportesController::class, 'compras'])->name('index');
-            Route::get('compras', [ReportesController::class, 'compras'])->name('compras');
-            Route::get('ventas', [ReportesController::class, 'ventas'])->name('ventas');
-            Route::get('compras/pdf', [ReportesController::class, 'comprasPdf'])->name('compras.pdf');
-            Route::get('ventas/pdf', [ReportesController::class, 'ventasPdf'])->name('ventas.pdf');
+            Route::middleware('permission:reportes.compras.ver')->group(function () {
+                Route::get('/', [ReportesController::class, 'compras'])->name('index');
+                Route::get('compras', [ReportesController::class, 'compras'])->name('compras');
+                Route::get('compras/vista-pdf', [ReportesController::class, 'comprasVistaPdf'])->name('compras.vista-pdf');
+                Route::get('compras/pdf', [ReportesController::class, 'comprasPdf'])->name('compras.pdf');
+            });
+
+            Route::middleware('permission:reportes.ventas.ver')->group(function () {
+                Route::get('ventas', [ReportesController::class, 'ventas'])->name('ventas');
+                Route::get('ventas/vista-pdf', [ReportesController::class, 'ventasVistaPdf'])->name('ventas.vista-pdf');
+                Route::get('ventas/pdf', [ReportesController::class, 'ventasPdf'])->name('ventas.pdf');
+            });
         });
 });
 
@@ -168,5 +179,9 @@ Route::middleware(['auth', 'verified', 'role:admin', 'permission:usuarios.gestio
         Route::patch('{user}/status', [UsersController::class, 'toggleStatus'])->name('toggle-status');
     });
 });
+
+Route::get('configuraciones', fn () => redirect()->route('profile.edit'))
+    ->middleware(['auth', 'verified', 'role:admin', 'permission:configuraciones.gestion'])
+    ->name('configuraciones.index');
 
 require __DIR__.'/settings.php';

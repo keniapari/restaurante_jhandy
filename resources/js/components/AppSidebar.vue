@@ -1,9 +1,20 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
-import { BarChart3, BookOpen, ChevronDown, FolderGit2, Globe, Home, LayoutGrid, Package, Package2, Settings, Shield, ShoppingCart, TrendingUp, Truck, User, Users } from 'lucide-vue-next';
+import {
+    BarChart3,
+    BookOpen,
+    CalendarDays,
+    ChefHat,
+    ClipboardList,
+    CreditCard,
+    LayoutGrid,
+    Shield,
+    ShoppingBag,
+    User,
+    UtensilsCrossed,
+} from 'lucide-vue-next';
+import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
-import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
@@ -13,43 +24,52 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-    SidebarMenuSub,
-    SidebarMenuSubItem,
-    SidebarMenuSubButton,
-
 } from '@/components/ui/sidebar';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { usePermissions } from '@/composables/usePermissions';
 import { dashboard } from '@/routes';
-import { useCurrentUrl } from '@/composables/useCurrentUrl';
+import { index as clienteMenuIndex } from '@/routes/cliente/menu';
+import { edit as pagosEdit } from '@/routes/configuracion/pagos';
+import { index as pedidosIndex } from '@/routes/gestion/pedidos';
+import { conformar as conformarIndex, index as menuIndex } from '@/routes/menu';
+import { index as platosIndex } from '@/routes/platos';
+import { index as reportesIndex } from '@/routes/reportes';
+import { index as reservasIndex } from '@/routes/reservas';
 import type { NavItem } from '@/types';
 
 const { can, hasRole } = usePermissions();
 const { isCurrentUrl } = useCurrentUrl();
 
-const reportesOpen = ref(true);
-
+const esCliente = computed(() => hasRole('cliente'));
 const dashboardUrl = dashboard().url;
-
-const vendedorOnlyNavItems: { title: string; href: string; icon: any }[] = [
-    {
-        title: 'Dashboard',
-        href: dashboardUrl,
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Ventas',
-        href: '/ventas',
-        icon: TrendingUp,
-    },
-];
+const homeUrl = computed(() =>
+    esCliente.value ? clienteMenuIndex().url : dashboardUrl,
+);
 
 const mainNavItems = computed<NavItem[]>(() => {
-    if (hasRole('vendedor')) {
-        return vendedorOnlyNavItems;
+    if (esCliente.value) {
+        return [
+            {
+                title: 'Nuestra Carta',
+                href: clienteMenuIndex().url,
+                icon: UtensilsCrossed,
+            },
+            {
+                title: 'Mi Perfil',
+                href: '/perfil',
+                icon: User,
+            },
+        ];
     }
 
-    const items: { title: string; href: string; permission?: string; icon: any }[] = [
+    const items: {
+        title: string;
+        href: string;
+        permission?: string;
+        hiddenForVendedor?: boolean;
+        adminOnly?: boolean;
+        icon: any;
+    }[] = [
         {
             title: 'Dashboard',
             href: dashboardUrl,
@@ -57,98 +77,85 @@ const mainNavItems = computed<NavItem[]>(() => {
             icon: LayoutGrid,
         },
         {
-            title: 'Compras',
-            href: '/compras',
-            permission: 'compras.ver',
-            icon: ShoppingCart,
+            title: 'Pedidos',
+            href: pedidosIndex().url,
+            permission: 'pedidos.ver',
+            icon: ClipboardList,
         },
         {
-            title: 'Ventas',
-            href: '/ventas',
-            permission: 'ventas.ver',
-            icon: TrendingUp,
+            title: 'Menú',
+            href: menuIndex().url,
+            permission: 'menu.ver',
+            icon: UtensilsCrossed,
         },
         {
-            title: 'Inventario',
-            href: '/inventario',
-            permission: 'inventario.ver',
-            icon: Package2,
+            title: 'Conformar pedido',
+            href: conformarIndex().url,
+            permission: 'pedidos.crear',
+            icon: ShoppingBag,
         },
-         {
-            title: 'Productos',
-            href: '/productos',
-            permission: 'productos.ver',
-            icon: Package,
+        {
+            title: 'Registrar platos',
+            href: platosIndex().url,
+            permission: 'platos.ver',
+            icon: ChefHat,
         },
-         {
-            title: 'Clientes',
-            href: '/clientes',
-            permission: 'clientes.ver',
-            icon: Users,
+        {
+            title: 'Registrar reservas',
+            href: reservasIndex().url,
+            permission: 'reservas.ver',
+            icon: CalendarDays,
         },
-         {
-            title: 'Proveedores',
-            href: '/proveedores',
-            permission: 'proveedores.ver',
-            icon: Truck,
+        {
+            title: 'Reportes',
+            href: reportesIndex().url,
+            permission: 'reportes.ventas.ver',
+            icon: BarChart3,
         },
-            {
+        {
             title: 'Roles y Permisos',
             href: '/roles',
             permission: 'usuarios.gestion',
             icon: Shield,
         },
-            {
+        {
             title: 'Usuarios',
             href: '/usuarios',
             permission: 'usuarios.gestion',
             icon: User,
         },
-            {
-            title: 'Configuraciones',
-            href: '/configuraciones',
-            permission: 'configuraciones.gestion',
-            icon: Settings,
+        {
+            title: 'QR de transferencia',
+            href: pagosEdit().url,
+            adminOnly: true,
+            icon: CreditCard,
         },
     ];
 
-    return items.filter((item) => !item.permission || can(item.permission));
+    return items.filter((item) => {
+        if (item.adminOnly && !hasRole('admin')) {
+            return false;
+        }
+
+        if (item.permission && !can(item.permission)) {
+            return false;
+        }
+
+        return !(item.hiddenForVendedor && hasRole('vendedor'));
+    });
 });
-
-const catalogNavItems = computed<NavItem[]>(() => [
-    {
-        title: 'Página Principal',
-        href: '/',
-        icon: Home,
-    },
-    {
-        title: 'Ver Catálogo',
-        href: '/catalogo',
-        icon: Globe,
-    },
-]);
-
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
-    },
-];
 </script>
 
 <template>
-    <Sidebar collapsible="offcanvas" class="sidebar-gradient-unified z-10 sticky top-0 h-svh">
+    <Sidebar
+        collapsible="offcanvas"
+        class="sidebar-gradient-unified sticky top-0 z-10 h-svh"
+    >
         <SidebarHeader>
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboardUrl">
+                        <Link :href="homeUrl">
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>
@@ -159,71 +166,28 @@ const footerNavItems: NavItem[] = [
         <SidebarContent class="flex flex-col gap-0">
             <NavMain :items="mainNavItems" />
 
-            <div v-if="can('panel.ver')" class="px-3 pt-2">
-                <Collapsible v-model:open="reportesOpen">
-                    <CollapsibleTrigger as-child>
-                        <button
-                            class="group/link flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold tracking-wide transition-all duration-200 text-gray-700 hover:bg-white/70 hover:text-rose-600 hover:shadow-md border border-transparent"
-                        >
-                            <BarChart3 class="h-5 w-5 flex-shrink-0 text-gray-400 transition-transform duration-200 group-hover/link:scale-110 group-hover/link:text-rose-500" />
-                            <span class="truncate flex-1 text-left">Reportes</span>
-                            <ChevronDown
-                                :class="[
-                                    'h-4 w-4 text-gray-400 transition-transform duration-200',
-                                    reportesOpen ? 'rotate-180' : '',
-                                ]"
-                            />
-                        </button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                        <SidebarMenuSub>
-                            <SidebarMenuSubItem>
-                                <SidebarMenuSubButton
-                                    as-child
-                                    :is-active="isCurrentUrl('/reportes/compras')"
-                                >
-                                    <Link href="/reportes/compras">
-                                        <ShoppingCart class="mr-2 h-4 w-4" />
-                                        <span>Compras</span>
-                                    </Link>
-                                </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                            <SidebarMenuSubItem>
-                                <SidebarMenuSubButton
-                                    as-child
-                                    :is-active="isCurrentUrl('/reportes/ventas')"
-                                >
-                                    <Link href="/reportes/ventas">
-                                        <TrendingUp class="mr-2 h-4 w-4" />
-                                        <span>Ventas</span>
-                                    </Link>
-                                </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                        </SidebarMenuSub>
-                    </CollapsibleContent>
-                </Collapsible>
-            </div>
-
-            <div class="px-3 pt-2">
-                <div class="mb-2 px-4">
-                    <span class="text-xs font-semibold uppercase tracking-wider text-gradient">
-                        <span class="mr-1.5">✦</span> Catálogo
-                    </span>
-                </div>
-                <div class="space-y-1">
-                    <template v-for="item in catalogNavItems" :key="item.title">
-                        <Link
-                            :href="item.href"
-                            class="group/link flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold tracking-wide transition-all duration-200 text-gray-700 hover:bg-white/70 hover:text-rose-600 hover:shadow-md border border-transparent"
-                        >
-                            <component
-                                :is="item.icon"
-                                class="h-5 w-5 flex-shrink-0 text-gray-400 transition-transform duration-200 group-hover/link:scale-110 group-hover/link:text-rose-500"
-                            />
-                            <span class="truncate">{{ item.title }}</span>
-                        </Link>
-                    </template>
-                </div>
+            <div v-if="!esCliente" class="space-y-0.5 px-3 pt-1">
+                <Link
+                    :href="menuIndex().url"
+                    prefetch="hover"
+                    :data-active="isCurrentUrl(menuIndex().url)"
+                    :class="[
+                        'group/link flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-semibold tracking-wide transition-all duration-200',
+                        isCurrentUrl(menuIndex().url)
+                            ? 'border border-emerald-900/10 bg-gradient-to-r from-emerald-900 to-emerald-800 text-amber-50 shadow-md'
+                            : 'border border-transparent text-emerald-950/80 hover:bg-white hover:text-emerald-800 hover:shadow-md',
+                    ]"
+                >
+                    <BookOpen
+                        :class="[
+                            'h-5 w-5 flex-shrink-0 transition-transform duration-200 group-hover/link:scale-110',
+                            isCurrentUrl(menuIndex().url)
+                                ? 'text-amber-200'
+                                : 'text-emerald-700/50 group-hover/link:text-emerald-600',
+                        ]"
+                    />
+                    <span class="truncate">Ver Menú</span>
+                </Link>
             </div>
 
             <div class="mt-auto">
@@ -236,39 +200,68 @@ const footerNavItems: NavItem[] = [
 
 <style>
 .sidebar-gradient-unified,
-.sidebar-gradient-unified [data-sidebar="sidebar"] {
-    background: linear-gradient(
-        135deg,
-        #fff5f7,
-        #fdf2f8,
-        #faf5ff,
-        #f5f3ff,
-        #eef2ff,
-        #ecfeff,
-        #fff5f7
-    ) !important;
-    background-size: 400% 400% !important;
-    animation: unified-gradient 20s ease infinite !important;
+.sidebar-gradient-unified [data-sidebar='sidebar'] {
+    background:
+        radial-gradient(
+            circle at 10% 0%,
+            rgba(231, 206, 142, 0.18),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at 90% 100%,
+            rgba(16, 185, 129, 0.22),
+            transparent 40%
+        ),
+        linear-gradient(
+            170deg,
+            #0b3d2e 0%,
+            #11503c 42%,
+            #0a3327 72%,
+            #08281f 100%
+        ) !important;
+    background-size: 300% 300% !important;
+    animation: unified-gradient 26s ease infinite !important;
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
+    border-right: 1px solid rgba(201, 162, 39, 0.35) !important;
+    box-shadow: 18px 0 50px -30px rgba(6, 78, 59, 0.65) !important;
 }
 
-.dark .sidebar-gradient-unified,
-.dark .sidebar-gradient-unified [data-sidebar="sidebar"] {
-    background: linear-gradient(
-        135deg,
-        #fff5f7,
-        #fdf2f8,
-        #faf5ff,
-        #f5f3ff,
-        #eef2ff,
-        #ecfeff,
-        #fff5f7
-    ) !important;
-    background-size: 400% 400% !important;
-    animation: unified-gradient 20s ease infinite !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
+.sidebar-gradient-unified a,
+.sidebar-gradient-unified button {
+    color: #f8f4ec !important;
+}
+
+.sidebar-gradient-unified [data-sidebar='group-label'] {
+    background: none !important;
+    -webkit-text-fill-color: #e7ce8e !important;
+    color: #e7ce8e !important;
+}
+
+.sidebar-gradient-unified svg {
+    color: #e7ce8e !important;
+}
+
+.sidebar-gradient-unified a:hover,
+.sidebar-gradient-unified button:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #fff8e7 !important;
+}
+
+.sidebar-gradient-unified [data-active='true'] {
+    background: linear-gradient(90deg, #c9a227, #e7ce8e) !important;
+    color: #0b2a20 !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 10px 24px -10px rgba(201, 162, 39, 0.85) !important;
+}
+
+.sidebar-gradient-unified [data-active='true'] svg {
+    color: #0b2a20 !important;
+}
+
+.sidebar-gradient-unified [data-sidebar='menu-button'] span,
+.sidebar-gradient-unified [data-sidebar='sidebar'] span {
+    color: inherit;
 }
 
 @keyframes unified-gradient {

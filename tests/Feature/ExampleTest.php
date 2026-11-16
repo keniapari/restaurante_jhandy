@@ -1,7 +1,12 @@
 <?php
 
-test('returns a successful response', function () {
-    $response = $this->get(route('home'));
+test('las imagenes del restaurante existen', function () {
+    expect(public_path('images/restaurant/interior.jpg'))->toBeFile();
+    expect(public_path('images/restaurant/plato-1.jpg'))->toBeFile();
+    expect(public_path('images/restaurant/plato-2.jpg'))->toBeFile();
+    expect(public_path('images/restaurant/logo.svg'))->toBeFile();
+});
 
-    $response->assertOk();
+test('la ruta principal muestra el menu para invitados', function () {
+    $this->get(route('principal'))->assertOk();
 });

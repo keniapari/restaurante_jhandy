@@ -22,8 +22,20 @@ enum Permission: string
     case ProveedoresVer = 'proveedores.ver';
     case ProveedoresGestion = 'proveedores.gestion';
     case FacturasVer = 'facturas.ver';
+    case PedidosVer = 'pedidos.ver';
+    case PedidosGestion = 'pedidos.gestion';
+    case PedidosCrear = 'pedidos.crear';
+    case PedidosConfirmar = 'pedidos.confirmar';
+    case PedidosCocina = 'pedidos.cocina';
+    case MenuVer = 'menu.ver';
+    case PlatosVer = 'platos.ver';
+    case PlatosGestion = 'platos.gestion';
+    case ReservasVer = 'reservas.ver';
+    case ReservasGestion = 'reservas.gestion';
     case UsuariosGestion = 'usuarios.gestion';
     case ConfiguracionesGestion = 'configuraciones.gestion';
+    case ReportesComprasVer = 'reportes.compras.ver';
+    case ReportesVentasVer = 'reportes.ventas.ver';
 
     public function label(): string
     {
@@ -46,8 +58,20 @@ enum Permission: string
             self::ProveedoresVer => 'Listar proveedores',
             self::ProveedoresGestion => 'Crear/editar/eliminar proveedores',
             self::FacturasVer => 'Ver facturas',
+            self::PedidosVer => 'Ver pedidos',
+            self::PedidosGestion => 'Gestionar pedidos (acceso completo)',
+            self::PedidosCrear => 'Registrar pedidos',
+            self::PedidosConfirmar => 'Confirmar pedidos',
+            self::PedidosCocina => 'Actualizar estado en cocina',
+            self::MenuVer => 'Ver menú del restaurante',
+            self::PlatosVer => 'Listar platos',
+            self::PlatosGestion => 'Crear/editar/eliminar platos',
+            self::ReservasVer => 'Ver reservas',
+            self::ReservasGestion => 'Crear/editar/eliminar reservas',
             self::UsuariosGestion => 'Gestionar usuarios del sistema',
             self::ConfiguracionesGestion => 'Gestionar configuraciones',
+            self::ReportesComprasVer => 'Ver reportes de compras',
+            self::ReportesVentasVer => 'Ver reportes de ventas',
         };
     }
 
@@ -62,8 +86,12 @@ enum Permission: string
             self::ClientesVer, self::ClientesGestion => 'clientes',
             self::ProveedoresVer, self::ProveedoresGestion => 'proveedores',
             self::FacturasVer => 'facturas',
+            self::PedidosVer, self::PedidosGestion, self::PedidosCrear, self::PedidosConfirmar, self::PedidosCocina => 'pedidos',
+            self::MenuVer, self::PlatosVer, self::PlatosGestion => 'platos',
+            self::ReservasVer, self::ReservasGestion => 'reservas',
             self::UsuariosGestion => 'usuarios',
             self::ConfiguracionesGestion => 'configuraciones',
+            self::ReportesComprasVer, self::ReportesVentasVer => 'reportes',
         };
     }
 
@@ -79,8 +107,19 @@ enum Permission: string
             self::ProductosVer,
             self::VentasVer,
             self::VentasCrear,
+            self::ComprasVer,
+            self::ComprasCrear,
             self::ClientesVer,
+            self::ClientesGestion,
             self::FacturasVer,
+            self::PedidosVer,
+            self::PedidosCrear,
+            self::PedidosConfirmar,
+            self::MenuVer,
+            self::PlatosVer,
+            self::ReservasVer,
+            self::ReservasGestion,
+            self::ReportesVentasVer,
         ];
     }
 
@@ -93,6 +132,10 @@ enum Permission: string
             self::InventarioGestion,
             self::ComprasVer,
             self::ProveedoresVer,
+            self::MenuVer,
+            self::PlatosVer,
+            self::PedidosVer,
+            self::PedidosCocina,
         ];
     }
 

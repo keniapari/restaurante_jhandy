@@ -8,6 +8,7 @@ export function getInitials(fullName?: string): string {
     }
 
     const name = fullName.trim();
+
     if (name.length === 0) {
         return '';
     }

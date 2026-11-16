@@ -13,7 +13,7 @@ test('login screen can be rendered', function () {
 
 test('users can authenticate using the login screen', function () {
     $this->seed(PermissionsSeeder::class);
-    $user = User::factory()->create(['role' => 'cajera']);
+    $user = User::factory()->create(['role' => 'vendedor']);
 
     $response = $this->post(route('login.store'), [
         'email' => $user->email,
@@ -56,12 +56,15 @@ test('users with two factor enabled are redirected to two factor challenge', fun
 test('users can not authenticate with invalid password', function () {
     $user = User::factory()->create();
 
-    $this->post(route('login.store'), [
+    $response = $this->post(route('login.store'), [
         'email' => $user->email,
         'password' => 'wrong-password',
     ]);
 
     $this->assertGuest();
+    $response->assertSessionHasErrors([
+        'email' => 'El correo electrónico o la contraseña son incorrectos.',
+    ]);
 });
 
 test('users can logout', function () {
@@ -70,7 +73,7 @@ test('users can logout', function () {
     $response = $this->actingAs($user)->post(route('logout'));
 
     $this->assertGuest();
-    $response->assertRedirect(route('home'));
+    $response->assertRedirect(route('principal'));
 });
 
 test('users are rate limited', function () {

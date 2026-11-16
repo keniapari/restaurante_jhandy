@@ -1,58 +1,91 @@
 <script setup lang="ts">
 import { Head, Link, usePage } from '@inertiajs/vue3';
+import {
+    BarChart3,
+    CalendarDays,
+    ChefHat,
+    ClipboardList,
+    Sparkles,
+    UserRound,
+    Users,
+    UtensilsCrossed,
+} from 'lucide-vue-next';
 import { computed } from 'vue';
-import { AlertTriangle, CalendarDays, CalendarRange, Eye, Package, PackageOpen, ShoppingCart, TrendingUp, Users } from 'lucide-vue-next';
+import { usePermissions } from '@/composables/usePermissions';
 import { dashboard } from '@/routes';
+import { conformar, index as menu } from '@/routes/menu';
+import { index as platos } from '@/routes/platos';
+import { index as reportes } from '@/routes/reportes';
+import { index as reservas } from '@/routes/reservas';
 
 const props = defineProps<{
     stats: {
-        totalProductos: number;
-        stockBajo: number;
+        totalUsuarios: number;
+        totalClientes: number;
+        totalPlatos: number;
+        platosDisponibles: number;
+        totalPedidos: number;
+        pedidosPendientes: number;
+        pedidosHoy: number;
         ventasHoy: number;
         ventasMes: number;
-        totalClientes: number;
-        totalUsuarios: number;
+        totalReservas: number;
+        reservasPendientes: number;
     };
-    stockAlertas: Array<{
-        producto: string;
-        cantidad: number;
-    }>;
-    ventasRecientes: Array<{
-        cliente: string;
-        fecha: string;
-        productos: string;
-        total: number;
-    }>;
     isVendedor: boolean;
 }>();
 
 const page = usePage();
+const { can } = usePermissions();
 
 const user = computed(() => page.props.auth?.user ?? null);
 const userRoles = computed(() => page.props.auth?.roles ?? []);
 
 function capitalizeName(name: string): string {
-    return name.replace(/\b\w/g, char => char.toUpperCase());
+    return name.replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 const roleInfo = computed(() => {
     const roles = userRoles.value;
+
     if (roles.includes('admin')) {
-        return { greeting: 'Bienvenida', title: 'Panel administrativo del sistema', roleName: 'Administradora' };
+        return {
+            greeting: 'Bienvenida',
+            title: 'Panel administrativo del restaurante',
+            roleName: 'Administradora',
+        };
     }
+
     if (roles.includes('vendedor')) {
-        return { greeting: 'Bienvenida', title: 'Panel de ventas y atención al cliente', roleName: 'Vendedora' };
+        return {
+            greeting: 'Bienvenida',
+            title: 'Pedidos, menú y reservas del día',
+            roleName: 'Vendedor',
+        };
     }
+
     if (roles.includes('encargado_inventario')) {
-        return { greeting: 'Bienvenida', title: 'Panel de gestión de inventario', roleName: 'Encargado de Inventario' };
+        return {
+            greeting: 'Bienvenida',
+            title: 'Cocina y disponibilidad de platos',
+            roleName: 'Encargado de cocina',
+        };
     }
-    return { greeting: 'Bienvenido', title: 'Panel de control', roleName: 'Usuario' };
+
+    return {
+        greeting: 'Bienvenido',
+        title: 'Panel de control',
+        roleName: 'Usuario',
+    };
 });
 
 const userName = computed(() => {
     const name = user.value?.name;
+
     return name ? capitalizeName(name) : 'Usuario';
 });
+
+const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 
 defineOptions({
     layout: {
@@ -65,227 +98,274 @@ defineOptions({
     },
 });
 
-const cards = [
+const cards = computed(() => [
     {
-        title: 'Productos',
-        value: props.stats.totalProductos,
-        icon: Package,
-        gradient: 'from-pink-400 to-rose-500',
-        bgLight: 'bg-pink-50',
-        textColor: 'text-pink-600',
-        iconBg: 'bg-pink-100',
+        title: 'Usuarios',
+        value: props.stats.totalUsuarios,
+        icon: Users,
+        gradient: 'from-emerald-50 via-white to-emerald-100',
+        iconColor: 'text-emerald-700',
+        bar: 'bg-emerald-600',
     },
     {
-        title: 'Stock Bajo',
-        value: props.stats.stockBajo,
-        icon: PackageOpen,
-        gradient: 'from-amber-400 to-orange-500',
-        bgLight: 'bg-amber-50',
-        textColor: 'text-amber-600',
-        iconBg: 'bg-amber-100',
+        title: 'Clientes',
+        value: props.stats.totalClientes,
+        icon: UserRound,
+        gradient: 'from-rose-50 via-white to-rose-100',
+        iconColor: 'text-rose-600',
+        bar: 'bg-rose-500',
     },
     {
-        title: 'Ventas Hoy',
-        value: `S/ ${props.stats.ventasHoy.toFixed(2)}`,
+        title: 'Pedidos',
+        value: props.stats.totalPedidos,
+        icon: ClipboardList,
+        gradient: 'from-amber-50 via-white to-amber-100',
+        iconColor: 'text-amber-700',
+        bar: 'bg-amber-500',
+    },
+    {
+        title: 'Platos',
+        value: props.stats.totalPlatos,
+        icon: ChefHat,
+        gradient: 'from-teal-50 via-white to-teal-100',
+        iconColor: 'text-teal-700',
+        bar: 'bg-teal-600',
+    },
+    {
+        title: 'Reservas',
+        value: props.stats.totalReservas,
         icon: CalendarDays,
-        gradient: 'from-purple-400 to-violet-500',
-        bgLight: 'bg-purple-50',
-        textColor: 'text-purple-600',
-        iconBg: 'bg-purple-100',
+        gradient: 'from-fuchsia-50 via-white to-fuchsia-100',
+        iconColor: 'text-fuchsia-700',
+        bar: 'bg-fuchsia-500',
+    },
+]);
+
+const summaries = computed(() => [
+    {
+        label: 'Pedidos de hoy',
+        value: props.stats.pedidosHoy,
+        hint: `${props.stats.pedidosPendientes} pendientes de atención`,
     },
     {
-        title: 'Ventas del Mes',
-        value: `S/ ${props.stats.ventasMes.toFixed(2)}`,
-        icon: CalendarRange,
-        gradient: 'from-sky-400 to-blue-500',
-        bgLight: 'bg-sky-50',
-        textColor: 'text-sky-600',
-        iconBg: 'bg-sky-100',
+        label: 'Reservas pendientes',
+        value: props.stats.reservasPendientes,
+        hint: 'Por confirmar o asignar mesa',
     },
-];
+    {
+        label: 'Ingresos de hoy',
+        value: `Bs. ${props.stats.ventasHoy.toFixed(2)}`,
+        hint: `Bs. ${props.stats.ventasMes.toFixed(2)} en el mes`,
+    },
+    {
+        label: 'Platos disponibles',
+        value: props.stats.platosDisponibles,
+        hint: `de ${props.stats.totalPlatos} registrados`,
+    },
+]);
 
-const formatCurrency = (value: number): string => {
-    return `S/ ${value.toFixed(2)}`;
-};
+const quickLinks = computed(() =>
+    [
+        {
+            title: 'Ver menú',
+            description: 'Catálogo de platos disponibles',
+            href: menu().url,
+            icon: UtensilsCrossed,
+            permission: 'menu.ver',
+        },
+        {
+            title: 'Conformar pedido',
+            description: 'Registrar un pedido de mesa o para llevar',
+            href: conformar().url,
+            icon: ClipboardList,
+            permission: 'pedidos.gestion',
+        },
+        {
+            title: 'Registrar platos',
+            description: 'Administrar el menú del restaurante',
+            href: platos().url,
+            icon: ChefHat,
+            permission: 'platos.ver',
+        },
+        {
+            title: 'Reservas',
+            description: 'Gestionar las reservas de los clientes',
+            href: reservas().url,
+            icon: CalendarDays,
+            permission: 'reservas.ver',
+        },
+        {
+            title: 'Reportes',
+            description: 'Consultar reportes de ventas y compras',
+            href: reportes().url,
+            icon: BarChart3,
+            permission: 'reportes.ventas.ver',
+        },
+    ].filter((link) => can(link.permission)),
+);
 </script>
 
 <template>
     <Head title="Dashboard" />
 
-    <div class="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-6">
-        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-50/90 via-purple-50/90 to-sky-50/90 p-8 shadow-sm border border-white/60">
-            <div class="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-gradient-to-br from-rose-200/40 to-purple-300/30 blur-2xl" />
-            <div class="absolute -bottom-6 -left-6 h-32 w-32 rounded-full bg-gradient-to-tr from-sky-200/40 to-cyan-200/30 blur-2xl" />
+    <div
+        class="flex h-full flex-1 flex-col gap-6 overflow-x-auto bg-gradient-to-br from-amber-50/60 via-white to-emerald-50/60 p-6 lg:p-8"
+    >
+        <section
+            class="relative overflow-hidden rounded-3xl border border-white/70 bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-700 p-6 text-amber-50 shadow-xl shadow-emerald-900/20 sm:p-8"
+        >
+            <div
+                class="pointer-events-none absolute -top-16 -right-10 h-56 w-56 rounded-full bg-amber-400/20 blur-3xl"
+            />
+            <div
+                class="pointer-events-none absolute -bottom-20 left-1/3 h-48 w-48 rounded-full bg-emerald-300/20 blur-3xl"
+            />
 
-            <div class="relative flex items-start justify-between gap-4">
-                <div class="flex-1">
-                    <div class="flex items-center gap-3">
-                        <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 text-white shadow-md">
-                            <span class="avatar-initial text-xl font-bold">{{ userName ? userName.charAt(0).toUpperCase() : '' }}</span>
-                        </div>
-                        <div>
-                            <h1 class="text-3xl font-bold tracking-tight text-gray-800">
-                                {{ roleInfo.greeting }} {{ userName }}
-                            </h1>
-                            <div class="mt-1 flex items-center gap-2">
-                                <span class="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-0.5 text-sm font-medium text-rose-600 shadow-sm border border-rose-200/50">
-                                    <span class="h-1.5 w-1.5 rounded-full bg-rose-500" />
-                                    {{ roleInfo.roleName }}
-                                </span>
-                                <p class="text-base text-gray-500">
-                                    {{ roleInfo.title }}
-                                </p>
-                            </div>
-                        </div>
+            <div
+                class="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between"
+            >
+                <div class="flex items-center gap-4">
+                    <div
+                        class="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100/15 text-2xl font-bold text-amber-200 ring-1 ring-amber-200/30"
+                    >
+                        {{ userInitial }}
+                    </div>
+                    <div>
+                        <p
+                            class="flex items-center gap-2 text-sm font-medium text-amber-200"
+                        >
+                            <Sparkles class="h-4 w-4" />
+                            {{ roleInfo.greeting }}, {{ roleInfo.roleName }}
+                        </p>
+                        <h1 class="mt-1 text-2xl font-bold sm:text-3xl">
+                            {{ userName }}
+                        </h1>
+                        <p class="mt-1 text-sm text-emerald-100/80">
+                            {{ roleInfo.title }}
+                        </p>
                     </div>
                 </div>
 
-                <Link
-                    href="/ventas"
-                    class="group hidden items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg sm:inline-flex"
+                <div
+                    class="grid grid-cols-2 gap-3 text-center sm:grid-cols-2 sm:text-right"
                 >
-                    <ShoppingCart class="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                    Registrar Venta
-                </Link>
+                    <div class="rounded-2xl bg-white/10 px-4 py-3">
+                        <p class="text-xs text-amber-200">Pedidos pendientes</p>
+                        <p class="text-xl font-bold">
+                            {{ props.stats.pedidosPendientes }}
+                        </p>
+                    </div>
+                    <div class="rounded-2xl bg-white/10 px-4 py-3">
+                        <p class="text-xs text-amber-200">Reservas pendientes</p>
+                        <p class="text-xl font-bold">
+                            {{ props.stats.reservasPendientes }}
+                        </p>
+                    </div>
+                </div>
             </div>
-        </div>
+        </section>
 
-        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <div
                 v-for="card in cards"
                 :key="card.title"
-                class="group relative overflow-hidden rounded-xl border border-white/60 bg-white/80 p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                class="relative overflow-hidden rounded-2xl border border-white/80 bg-gradient-to-br p-5 shadow-md shadow-slate-200/60"
+                :class="card.gradient"
             >
-                <div class="absolute -right-6 -top-6 h-20 w-20 rounded-full opacity-0 bg-gradient-to-br transition-all duration-500 group-hover:opacity-10"
-                    :class="card.gradient"
-                />
-                <div class="flex items-start justify-between">
-                    <div class="flex flex-col gap-1">
-                        <span class="text-sm font-medium text-gray-500">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p
+                            class="text-xs font-semibold tracking-wide text-slate-500 uppercase"
+                        >
                             {{ card.title }}
-                        </span>
-                        <span class="text-3xl font-bold tracking-tight text-gray-800">
+                        </p>
+                        <p class="mt-2 text-3xl font-bold text-slate-800">
                             {{ card.value }}
-                        </span>
+                        </p>
                     </div>
-                    <div :class="[card.iconBg, 'flex h-12 w-12 items-center justify-center rounded-xl shadow-sm transition-transform duration-300 group-hover:scale-110']">
-                        <component :is="card.icon" :class="[card.textColor, 'h-6 w-6']" />
+                    <div class="rounded-xl bg-white/80 p-2 shadow-sm">
+                        <component
+                            :is="card.icon"
+                            class="h-5 w-5"
+                            :class="card.iconColor"
+                        />
                     </div>
                 </div>
-                <div :class="['mt-4 h-1.5 w-full rounded-full', card.bgLight]">
-                    <div :class="['h-1.5 rounded-full bg-gradient-to-r transition-all duration-500', card.gradient]"
-                        :style="{ width: Math.min((typeof card.value === 'number' ? card.value : 0) / 100 * 100, 100) + '%' }"
-                    />
-                </div>
+                <span
+                    class="absolute inset-x-4 bottom-0 h-1 rounded-full opacity-70"
+                    :class="card.bar"
+                />
             </div>
         </div>
 
-        <div class="grid gap-5 lg:grid-cols-2">
-            <div class="rounded-xl border border-white/60 bg-white/80 p-6 shadow-sm transition-all duration-300 hover:shadow-md">
-                <div class="mb-5 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100">
-                            <AlertTriangle class="h-5 w-5 text-amber-600" />
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-800">Alertas de Stock</h3>
-                    </div>
-                    <span class="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
-                        {{ stockAlertas.length }} alertas
-                    </span>
-                </div>
+        <div class="grid gap-6 lg:grid-cols-2">
+            <section
+                class="rounded-2xl border border-emerald-100 bg-white/85 p-6 shadow-md shadow-slate-200/50 backdrop-blur"
+            >
+                <h2 class="text-lg font-semibold text-slate-800">
+                    Resumen del día
+                </h2>
+                <p class="mt-1 text-sm text-slate-500">
+                    Estado general de la operación del restaurante.
+                </p>
 
-                <div v-if="stockAlertas.length > 0" class="space-y-3">
+                <div class="mt-5 grid gap-3 sm:grid-cols-2">
                     <div
-                        v-for="(alerta, index) in stockAlertas"
-                        :key="index"
-                        class="flex items-center justify-between rounded-lg bg-amber-50/80 px-4 py-3 border border-amber-200/50"
+                        v-for="item in summaries"
+                        :key="item.label"
+                        class="rounded-xl border border-slate-100 bg-slate-50/70 p-4"
                     >
-                        <div class="flex items-center gap-3">
-                            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-amber-200/60">
-                                <PackageOpen class="h-4 w-4 text-amber-600" />
-                            </div>
-                            <div>
-                                <p class="text-sm font-medium text-gray-700">{{ alerta.producto }}</p>
-                                <p class="text-xs text-gray-500">Cantidad restante</p>
-                            </div>
-                        </div>
-                        <span class="rounded-full bg-rose-100 px-3 py-1 text-sm font-bold text-rose-600">
-                            {{ alerta.cantidad }} uds
-                        </span>
+                        <p class="text-xs font-medium text-slate-500">
+                            {{ item.label }}
+                        </p>
+                        <p class="mt-1 text-2xl font-bold text-slate-800">
+                            {{ item.value }}
+                        </p>
+                        <p class="mt-1 text-xs text-slate-400">
+                            {{ item.hint }}
+                        </p>
                     </div>
                 </div>
+            </section>
 
-                <div v-else class="flex flex-col items-center justify-center py-10 text-center">
-                    <div class="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-                        <PackageOpen class="h-8 w-8 text-emerald-500" />
-                    </div>
-                    <p class="text-sm font-medium text-gray-600">No hay alertas de stock</p>
-                    <p class="mt-1 text-xs text-gray-400">Todos los productos tienen inventario suficiente</p>
-                </div>
+            <section
+                class="rounded-2xl border border-emerald-100 bg-white/85 p-6 shadow-md shadow-slate-200/50 backdrop-blur"
+            >
+                <h2 class="text-lg font-semibold text-slate-800">
+                    Accesos rápidos
+                </h2>
+                <p class="mt-1 text-sm text-slate-500">
+                    Atajos a las tareas más frecuentes.
+                </p>
 
-                <div class="mt-5 border-t border-gray-100 pt-4">
+                <div class="mt-5 space-y-2">
                     <Link
-                        href="/inventario"
-                        class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
+                        v-for="link in quickLinks"
+                        :key="link.title"
+                        :href="link.href"
+                        class="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 transition-all hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/60 hover:shadow-sm"
                     >
-                        <Eye class="h-4 w-4" />
-                        Ver Inventario
+                        <span
+                            class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100"
+                        >
+                            <component
+                                :is="link.icon"
+                                class="h-5 w-5 text-emerald-700"
+                            />
+                        </span>
+                        <span class="min-w-0">
+                            <span
+                                class="block text-sm font-semibold text-slate-800"
+                            >
+                                {{ link.title }}
+                            </span>
+                            <span class="block text-xs text-slate-500">
+                                {{ link.description }}
+                            </span>
+                        </span>
                     </Link>
                 </div>
-            </div>
-
-            <div class="rounded-xl border border-white/60 bg-white/80 p-6 shadow-sm transition-all duration-300 hover:shadow-md">
-                <div class="mb-5 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
-                            <TrendingUp class="h-5 w-5 text-purple-600" />
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-800">Ventas Recientes</h3>
-                    </div>
-                    <span class="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-semibold text-purple-700">
-                        {{ ventasRecientes.length }} ventas
-                    </span>
-                </div>
-
-                <div v-if="ventasRecientes.length > 0" class="space-y-3">
-                    <div
-                        v-for="(venta, index) in ventasRecientes"
-                        :key="index"
-                        class="flex items-center justify-between rounded-lg bg-purple-50/80 px-4 py-3 border border-purple-200/50"
-                    >
-                        <div class="flex items-center gap-3">
-                            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-purple-200/60">
-                                <ShoppingCart class="h-4 w-4 text-purple-600" />
-                            </div>
-                            <div>
-                                <p class="text-sm font-medium text-gray-700">{{ venta.cliente }}</p>
-                                <p class="text-xs text-gray-500">{{ venta.fecha }} &middot; {{ venta.productos }}</p>
-                            </div>
-                        </div>
-                        <span class="rounded-full bg-emerald-100 px-3 py-1 text-sm font-bold text-emerald-600">
-                            {{ formatCurrency(venta.total) }}
-                        </span>
-                    </div>
-                </div>
-
-                <div v-else class="flex flex-col items-center justify-center py-10 text-center">
-                    <div class="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-purple-100">
-                        <TrendingUp class="h-8 w-8 text-purple-400" />
-                    </div>
-                    <p class="text-sm font-medium text-gray-600">No hay ventas recientes</p>
-                    <p class="mt-1 text-xs text-gray-400">Las ventas aparecerán aquí cuando se registren</p>
-                </div>
-
-                <div class="mt-5 border-t border-gray-100 pt-4">
-                    <Link
-                        href="/ventas"
-                        class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-violet-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
-                    >
-                        <Eye class="h-4 w-4" />
-                        Ver Ventas
-                    </Link>
-                </div>
-            </div>
+            </section>
         </div>
     </div>
 </template>

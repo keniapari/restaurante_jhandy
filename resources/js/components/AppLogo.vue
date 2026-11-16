@@ -1,16 +1,16 @@
-<script setup lang="ts">
-import AppLogoIcon from '@/components/AppLogoIcon.vue';
-</script>
-
 <template>
-    <div
-        class="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground"
-    >
-        <AppLogoIcon class="size-5 fill-current text-white dark:text-black" />
-    </div>
-    <div class="ml-1 grid flex-1 text-left text-sm">
-        <span class="mb-0.5 truncate leading-tight font-semibold"
-            >Laravel Starter Kit</span
+    <img
+        src="/images/restaurant/logo.svg"
+        alt="Logo de Restaurante Jhandy"
+        class="size-10 rounded-full object-cover shadow-lg ring-2 shadow-black/30 ring-amber-300/60"
+    />
+    <div class="ml-2 grid flex-1 text-left">
+        <span class="truncate text-sm leading-tight font-bold text-amber-50"
+            >Restaurante Jhandy</span
+        >
+        <span
+            class="truncate text-[11px] font-medium tracking-wide text-amber-100/70"
+            >Sistema de Control</span
         >
     </div>
 </template>
