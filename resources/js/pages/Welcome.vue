@@ -4,7 +4,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { login } from '@/routes';
 import type { Plato } from '@/types';
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         platos: Plato[];
         categorias: string[];
@@ -17,6 +17,9 @@ withDefaults(
 
 const page = usePage();
 const isScrolled = ref(false);
+const platosComida = computed(() =>
+    (props.platos ?? []).filter((p) => p.categoria !== 'Postres'),
+);
 const handleScroll = () => {
     isScrolled.value = window.scrollY > 20;
 };
@@ -89,7 +92,7 @@ const formatCurrency = (value: number): string =>
                 <img
                     src="/images/restaurant/interior.jpg"
                     alt="Restaurante Jhandy"
-                    class="h-full w-full object-cover"
+                    class="h-full w-full scale-105 object-cover animate-[kenburns_24s_ease-in-out_infinite]"
                 />
                 <div
                     class="absolute inset-0 bg-gradient-to-br from-emerald-950/80 via-stone-900/50 to-amber-900/70"
@@ -121,10 +124,15 @@ const formatCurrency = (value: number): string =>
                             class="mb-6 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl"
                         >
                             Bienvenido a
-                            <span
-                                class="bg-gradient-to-r from-emerald-300 via-amber-300 to-orange-300 bg-clip-text text-transparent"
-                            >
-                                Restaurante Jhandy
+                            <span class="inline-block">
+                                <span
+                                    v-for="(letra, i) in 'Restaurante Jhandy'.split('')"
+                                    :key="i"
+                                    class="inline-block text-amber-300 animate-[bounceLetter_1.2s_ease-in-out_infinite]"
+                                    :style="{ animationDelay: i * 0.08 + 's' }"
+                                >
+                                    {{ letra === ' ' ? '\u00A0' : letra }}
+                                </span>
                             </span>
                         </h1>
                         <p
@@ -184,7 +192,7 @@ const formatCurrency = (value: number): string =>
                                 <img
                                     src="/images/restaurant/plato-1.jpg"
                                     alt="Plato destacado"
-                                    class="h-[320px] w-full object-cover"
+                                    class="h-[320px] w-full object-cover animate-[kenburns_18s_ease-in-out_infinite]"
                                 />
                                 <div
                                     class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-emerald-900/20 via-transparent to-amber-900/10"
@@ -194,9 +202,9 @@ const formatCurrency = (value: number): string =>
                                 class="overflow-hidden rounded-2xl shadow-xl shadow-emerald-900/30"
                             >
                                 <img
-                                    src="/images/restaurant/plato-2.jpg"
+                                    src="/images/restaurant/plato-4.jpg"
                                     alt="Plato"
-                                    class="h-40 w-full object-cover transition-transform duration-500 hover:scale-105"
+                                    class="h-40 w-full object-cover transition-transform duration-500 hover:scale-105 animate-[float_6s_ease-in-out_infinite]"
                                 />
                             </div>
                             <div
@@ -205,7 +213,7 @@ const formatCurrency = (value: number): string =>
                                 <img
                                     src="/images/restaurant/plato-3.jpg"
                                     alt="Plato"
-                                    class="h-40 w-full object-cover transition-transform duration-500 hover:scale-105"
+                                    class="h-40 w-full object-cover transition-transform duration-500 hover:scale-105 animate-[float_6s_ease-in-out_infinite]"
                                 />
                             </div>
                         </div>
@@ -248,62 +256,63 @@ const formatCurrency = (value: number): string =>
                 </div>
 
                 <div
-                    v-if="platos.length === 0"
+                    v-if="platosComida.length === 0"
                     class="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/40 p-12 text-center text-stone-500"
                 >
                     Próximamente nuestra carta estará disponible.
                 </div>
-                <div
-                    v-else
-                    class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-                >
-                    <article
-                        v-for="plato in platos"
-                        :key="plato.id"
-                        class="group overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-100/40"
+                <div v-else class="relative overflow-hidden">
+                    <div
+                        class="flex gap-6 animate-[marquee_40s_linear_infinite] hover:[animation-play-state:paused]"
                     >
-                        <div class="relative h-44 overflow-hidden">
-                            <img
-                                :src="
-                                    plato.imagen ??
-                                    '/images/restaurant/plato-1.jpg'
-                                "
-                                :alt="plato.nombre"
-                                class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                            <div
-                                class="absolute top-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-emerald-700 shadow-sm backdrop-blur"
-                            >
-                                {{ plato.categoria }}
-                            </div>
-                        </div>
-                        <div class="space-y-2 p-5">
-                            <div
-                                class="flex items-start justify-between gap-3"
-                            >
-                                <h3
-                                    class="font-semibold text-stone-900"
+                        <article
+                            v-for="(plato, i) in [...platosComida, ...platosComida]"
+                            :key="plato.id + '-' + i"
+                            class="group w-80 shrink-0 overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-100/40"
+                        >
+                            <div class="relative h-44 overflow-hidden">
+                                <img
+                                    :src="
+                                        plato.imagen ??
+                                        '/images/restaurant/plato-1.jpg'
+                                    "
+                                    :alt="plato.nombre"
+                                    class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 animate-[float_6s_ease-in-out_infinite]"
+                                />
+                                <div
+                                    class="absolute top-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-emerald-700 shadow-sm backdrop-blur"
                                 >
-                                    {{ plato.nombre }}
-                                </h3>
-                                <span
-                                    class="font-bold text-emerald-700"
-                                >
-                                    {{
-                                        formatCurrency(
-                                            Number(plato.precio),
-                                        )
-                                    }}
-                                </span>
+                                    {{ plato.categoria }}
+                                </div>
                             </div>
-                            <p
-                                v-if="plato.descripcion"
-                                class="line-clamp-2 text-sm text-stone-500"
-                            >
-                                {{ plato.descripcion }}
-                            </p>
-                        </div>
-                    </article>
+                            <div class="space-y-2 p-5">
+                                <div
+                                    class="flex items-start justify-between gap-3"
+                                >
+                                    <h3
+                                        class="font-semibold text-stone-900 animate-[slide_3s_ease-in-out_infinite]"
+                                    >
+                                        {{ plato.nombre }}
+                                    </h3>
+                                    <span
+                                        class="font-bold text-emerald-700"
+                                    >
+                                        {{
+                                            formatCurrency(
+                                                Number(plato.precio),
+                                            )
+                                        }}
+                                    </span>
+                                </div>
+                                <p
+                                    v-if="plato.descripcion"
+                                    class="line-clamp-2 text-sm text-stone-500"
+                                >
+                                    {{ plato.descripcion }}
+                                </p>
+                            </div>
+                        </article>
+                    </div>
                 </div>
 
                 <div class="mt-12 text-center">
@@ -571,3 +580,60 @@ const formatCurrency = (value: number): string =>
         </footer>
     </div>
 </template>
+
+<style>
+@keyframes kenburns {
+    0% {
+        transform: scale(1) translate(0, 0);
+    }
+    50% {
+        transform: scale(1.12) translate(-3%, -2%);
+    }
+    100% {
+        transform: scale(1) translate(0, 0);
+    }
+}
+@keyframes shimmer {
+    0% {
+        background-position: 0% 50%;
+    }
+    100% {
+        background-position: 200% 50%;
+    }
+}
+@keyframes marquee {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-4px) scale(1.03);
+    }
+}
+@keyframes slide {
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+    50% {
+        transform: translateX(3px);
+    }
+}
+@keyframes bounceLetter {
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-16px) scale(1.12);
+    }
+}
+</style>

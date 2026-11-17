@@ -15,8 +15,8 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { store as storePedido } from '@/routes/cliente/menu';
 import { login } from '@/routes';
+import { store as storePedido } from '@/routes/cliente/menu';
 import type { Plato } from '@/types';
 
 type OrderLine = {

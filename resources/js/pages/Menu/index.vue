@@ -19,15 +19,24 @@ const { totalItems, subtotal, cantidadDe, addItem, updateCantidad } =
     useMenuOrder();
 
 const search = ref('');
+const categoriaActiva = ref('Todas');
+
+const platosDeCategoria = computed(() =>
+    categoriaActiva.value === 'Todas'
+        ? props.platos
+        : props.platos.filter(
+              (plato) => plato.categoria === categoriaActiva.value,
+          ),
+);
 
 const platosFiltrados = computed(() => {
     const term = search.value.trim().toLowerCase();
 
     if (!term) {
-        return props.platos;
+        return platosDeCategoria.value;
     }
 
-    return props.platos.filter(
+    return platosDeCategoria.value.filter(
         (plato) =>
             plato.nombre.toLowerCase().includes(term) ||
             (plato.descripcion ?? '').toLowerCase().includes(term) ||
@@ -35,16 +44,6 @@ const platosFiltrados = computed(() => {
     );
 });
 
-const categoriasConPlatos = computed(() =>
-    props.categorias
-        .map((categoria) => ({
-            categoria,
-            platos: platosFiltrados.value.filter(
-                (plato) => plato.categoria === categoria,
-            ),
-        }))
-        .filter((grupo) => grupo.platos.length > 0),
-);
 
 function formatCurrency(value: number): string {
     return new Intl.NumberFormat('es-BO', {
@@ -103,29 +102,69 @@ defineOptions({
             </div>
         </div>
 
-        <div v-if="categoriasConPlatos.length === 0" class="rounded-2xl border border-emerald-300 bg-white/70 p-12 text-center text-sm text-muted-foreground">
-            <UtensilsCrossed class="mx-auto mb-2 h-8 w-8 opacity-40" />
-            No hay platos disponibles con ese criterio.
-        </div>
+        <div class="flex flex-col gap-4 lg:flex-row">
+            <aside class="w-full shrink-0 lg:w-52">
+                <div class="sticky top-4 space-y-3 rounded-2xl border border-emerald-300 bg-white/80 p-3 shadow-sm">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                        Platos
+                    </p>
+                    <button
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold transition"
+                        :class="
+                            categoriaActiva === 'Todas'
+                                ? 'bg-emerald-700 text-white'
+                                : 'text-emerald-900 hover:bg-emerald-100'
+                        "
+                        @click="categoriaActiva = 'Todas'"
+                    >
+                        Todos
+                    </button>
+                    <button
+                        v-for="cat in props.categorias.filter((c) => c !== 'Bebidas')"
+                        :key="cat"
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold transition"
+                        :class="
+                            categoriaActiva === cat
+                                ? 'bg-emerald-700 text-white'
+                                : 'text-emerald-900 hover:bg-emerald-100'
+                        "
+                        @click="categoriaActiva = cat"
+                    >
+                        {{ cat }}
+                    </button>
+                    <p class="pt-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                        Bebidas
+                    </p>
+                    <button
+                        v-if="props.categorias.includes('Bebidas')"
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold transition"
+                        :class="
+                            categoriaActiva === 'Bebidas'
+                                ? 'bg-emerald-700 text-white'
+                                : 'text-emerald-900 hover:bg-emerald-100'
+                        "
+                        @click="categoriaActiva = 'Bebidas'"
+                    >
+                        Bebidas
+                    </button>
+                </div>
+            </aside>
 
-        <section
-            v-for="grupo in categoriasConPlatos"
-            :key="grupo.categoria"
-            class="space-y-3"
-        >
-            <div class="flex items-center gap-2">
-                <h2 class="text-lg font-semibold text-emerald-900">
-                    {{ grupo.categoria }}
-                </h2>
-                <Badge variant="secondary">{{ grupo.platos.length }}</Badge>
-            </div>
+            <div class="flex-1 space-y-3">
+                <div v-if="platosFiltrados.length === 0" class="rounded-2xl border border-emerald-300 bg-white/70 p-12 text-center text-sm text-muted-foreground">
+                    <UtensilsCrossed class="mx-auto mb-2 h-8 w-8 opacity-40" />
+                    No hay platos disponibles con ese criterio.
+                </div>
 
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                <article
-                    v-for="plato in grupo.platos"
-                    :key="plato.id"
-                    class="flex flex-col overflow-hidden rounded-2xl border border-emerald-300 bg-white/85 shadow-md transition-shadow hover:shadow-xl"
-                >
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <article
+                        v-for="plato in platosFiltrados"
+                        :key="plato.id"
+                        class="flex flex-col overflow-hidden rounded-2xl border border-emerald-300 bg-white/85 shadow-md transition-shadow hover:shadow-xl"
+                    >
                     <img
                         :src="plato.imagen ?? '/images/restaurant/plato-1.jpg'"
                         :alt="plato.nombre"
@@ -172,7 +211,8 @@ defineOptions({
                     </div>
                 </article>
             </div>
-        </section>
+            </div>
+        </div>
 
         <div
             v-if="totalItems > 0"

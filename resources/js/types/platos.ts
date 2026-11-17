@@ -1,7 +1,6 @@
 export type PlatoCategoria =
     | 'Entradas'
     | 'Platos fuertes'
-    | 'Postres'
     | 'Bebidas';
 
 export type Plato = {

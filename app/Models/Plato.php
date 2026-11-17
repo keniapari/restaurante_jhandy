@@ -15,7 +15,6 @@ class Plato extends Model
     public const CATEGORIAS = [
         'Entradas',
         'Platos fuertes',
-        'Postres',
         'Bebidas',
     ];
 

@@ -209,7 +209,7 @@ const quickLinks = computed(() =>
     <Head title="Dashboard" />
 
     <div
-        class="flex h-full flex-1 flex-col gap-6 overflow-x-auto bg-gradient-to-br from-amber-50/60 via-white to-emerald-50/60 p-6 lg:p-8"
+        class="flex h-full flex-1 flex-col gap-6 overflow-x-auto bg-gradient-to-br from-emerald-200 via-amber-100 to-teal-200 p-6 lg:p-8"
     >
         <section
             class="relative overflow-hidden rounded-3xl border border-white/70 bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-700 p-6 text-amber-50 shadow-xl shadow-emerald-900/20 sm:p-8"

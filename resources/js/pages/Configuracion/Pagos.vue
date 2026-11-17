@@ -2,8 +2,8 @@
 import { Form, Head } from '@inertiajs/vue3';
 import { CreditCard, Upload } from 'lucide-vue-next';
 import ConfiguracionPagoController from '@/actions/App/Http/Controllers/ConfiguracionPagoController';
-import InputError from '@/components/InputError.vue';
 import Heading from '@/components/Heading.vue';
+import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 

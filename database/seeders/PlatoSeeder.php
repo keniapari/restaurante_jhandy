@@ -15,17 +15,22 @@ class PlatoSeeder extends Seeder
             ['nombre' => 'Silpancho', 'categoria' => 'Platos fuertes', 'precio' => 35, 'descripcion' => 'Carne apanada, arroz, papa y huevo.'],
             ['nombre' => 'Pique macho', 'categoria' => 'Platos fuertes', 'precio' => 55, 'descripcion' => 'Carne de res, papas fritas, salchicha y locoto.'],
             ['nombre' => 'Pollo a la plancha', 'categoria' => 'Platos fuertes', 'precio' => 38, 'descripcion' => 'Pechuga de pollo con guarnición de arroz y ensalada.'],
-            ['nombre' => 'Flan de caramelo', 'categoria' => 'Postres', 'precio' => 15, 'descripcion' => 'Flan casero con salsa de caramelo.'],
-            ['nombre' => 'Jugo de maracuyá', 'categoria' => 'Bebidas', 'precio' => 10, 'descripcion' => 'Jugo natural de maracuyá.'],
-            ['nombre' => 'Limonada', 'categoria' => 'Bebidas', 'precio' => 8, 'descripcion' => 'Limonada fresca con hierbabuena.'],
+            ['nombre' => 'Gaseosa', 'categoria' => 'Bebidas', 'precio' => 8, 'descripcion' => 'Gaseosa fría de varios sabores.'],
+            ['nombre' => 'Hervido', 'categoria' => 'Bebidas', 'precio' => 10, 'descripcion' => 'Bebida caliente tradicional.'],
+            ['nombre' => 'Cerveza', 'categoria' => 'Bebidas', 'precio' => 15, 'descripcion' => 'Cerveza fría.'],
         ];
 
         foreach ($platos as $index => $plato) {
+            $imagenesComida = [
+                '/images/restaurant/plato-1.jpg',
+                '/images/restaurant/plato-3.jpg',
+                '/images/restaurant/plato-4.jpg',
+            ];
             Plato::updateOrCreate(
                 ['nombre' => $plato['nombre']],
                 [
                     ...$plato,
-                    'imagen' => '/images/restaurant/plato-'.(($index % 4) + 1).'.jpg',
+                    'imagen' => $imagenesComida[$index % count($imagenesComida)],
                     'disponible' => true,
                     'estado' => 'activo',
                 ]
